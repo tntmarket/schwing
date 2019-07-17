@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "baseUrl": "./src",
+    "paths": {
+      "ROOT/*": ["./*"]
+    },
+    "outDir": ".tsdump",
+    "lib": ["es6", "dom", "scripthost"],
+    "strict": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules"]
+}

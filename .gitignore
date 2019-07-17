@@ -1,0 +1,7 @@
+.cache
+.idea
+.tsdump
+coverage
+dist
+node_modules
+yarn-error.log
