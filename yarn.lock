@@ -997,6 +997,11 @@
   dependencies:
     "@types/jest-diff" "*"
 
+"@types/matter-js@^0.10.2":
+  version "0.10.2"
+  resolved "https://registry.yarnpkg.com/@types/matter-js/-/matter-js-0.10.2.tgz#49c20c23316637538c860f6d2e3d4d89b20a6551"
+  integrity sha512-7zg46Fx+nPIZ+WlK0Xud8L2IKk9BsilA7hgw+60o75/hM0fnx5MgufCpNPQB+69N+0WFirX5fhoHdmYdzkwdGw==
+
 "@types/q@^1.5.1":
   version "1.5.2"
   resolved "https://registry.yarnpkg.com/@types/q/-/q-1.5.2.tgz#690a1475b84f2a884fd07cd797c00f5f31356ea8"
@@ -4298,6 +4303,11 @@ marked@^0.7.0:
   version "0.7.0"
   resolved "https://registry.yarnpkg.com/marked/-/marked-0.7.0.tgz#b64201f051d271b1edc10a04d1ae9b74bb8e5c0e"
   integrity sha512-c+yYdCZJQrsRjTPhUx7VKkApw9bwDkNbHUKo1ovgcfDjb2kc8rLuRbIFyXL5WOEUwzSSKo3IXpph2K6DqB/KZg==
+
+matter-js@^0.14.2:
+  version "0.14.2"
+  resolved "https://registry.yarnpkg.com/matter-js/-/matter-js-0.14.2.tgz#8169af9e06fdc356ba9e72b49624eb329839883b"
+  integrity sha512-3ttVT8cJlQnGRjBa8MyVrGyvGmnmOkZ3YsyemIw+KwEEdVi70mo32FH1Eta2b3GfdDJFbMDRqyMQt4heNKBUEA==
 
 md5.js@^1.3.4:
   version "1.3.5"
