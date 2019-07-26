@@ -41,7 +41,14 @@ function create(this: {
 
   matter.world.setBounds(-WIDTH / 2, -HEIGHT / 2, WIDTH, HEIGHT)
 
-  matter.add.rectangle(200, 200, 10, 100, {})
+  matter.add.rectangle(-400, -400, 20, 70, {})
+  matter.add.rectangle(-300, -300, 10, 70, {})
+  matter.add.rectangle(-200, -200, 20, 70, {})
+  matter.add.rectangle(-100, -100, 10, 70, {})
+  matter.add.rectangle(100, 100, 20, 70, {})
+  matter.add.rectangle(200, 200, 10, 70, {})
+  matter.add.rectangle(300, 300, 20, 70, {})
+  matter.add.rectangle(400, 400, 10, 70, {})
 
   player = matter.add.image(0, 0, 'player').setScale(0.2, 0.2)
   player.setDensity(1)
@@ -76,7 +83,7 @@ function create(this: {
     pointB: { x: 0, y: 25 },
   })
   // @ts-ignore
-  matter.add.constraint(pointer, weapon, 1, 0.5, {
+  matter.add.constraint(pointer, weapon, 1, 0.6, {
     pointA: { x: 0, y: 0 },
     pointB: { x: 0, y: -40 },
     damping: 1,
@@ -143,7 +150,7 @@ function create(this: {
 
 const weaponTipOrbitFromHand = pointerX => {
   // 1.7 for max right
-  const horizontalOffset = (2 * pointerX - CAMERA_WIDTH) / CAMERA_WIDTH * 1.7
+  const horizontalOffset = ((2 * pointerX - CAMERA_WIDTH) / CAMERA_WIDTH) * 1.7
   // -90 degrees (vertical) at neutral. 0 degrees (to the right) at maximum.
   const handOffsetAngle = ((horizontalOffset - 1) * Math.PI) / 2
   const playerToHand = new Phaser.Math.Vector2().setToPolar(
@@ -167,10 +174,7 @@ function update(this: {
   const { cameras, input } = this
 
   const weaponTipPointerPosition = weaponTipOrbitFromHand(input.activePointer.x)
-  pointer.setPosition(
-    weaponTipPointerPosition.x,
-    weaponTipPointerPosition.y
-  )
+  pointer.setPosition(weaponTipPointerPosition.x, weaponTipPointerPosition.y)
 
   cameras.main.setRotation(-player.rotation)
 }
