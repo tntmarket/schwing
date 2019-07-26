@@ -3,8 +3,8 @@ import 'phaser'
 const WIDTH = 1000
 const HEIGHT = 1000
 
-const CAMERA_WIDTH = 500
-const CAMERA_HEIGHT = 500
+const CAMERA_WIDTH = 600
+const CAMERA_HEIGHT = 600
 
 let WASD: {
   W: Phaser.Input.Keyboard.Key
@@ -15,8 +15,11 @@ let WASD: {
   E: Phaser.Input.Keyboard.Key
 }
 
+const ARM_LENGTH = 35
+
 let pointer: Phaser.Physics.Matter.Image
 let player: Phaser.Physics.Matter.Image
+let weapon: Phaser.Physics.Matter.Image
 
 const DASH_SPEED = 8
 
@@ -44,9 +47,9 @@ function create(this: {
   player.setDensity(1)
   player.setFriction(1, 0.05)
 
-  const sword = matter.add.image(0, -100, 'sword').setScale(2, -2)
-  sword.setDensity(0.001)
-  sword.setFriction(1, 0.05)
+  weapon = matter.add.image(0, -100, 'sword').setScale(2, -2)
+  weapon.setDensity(0.004)
+  weapon.setFriction(1, 0.05)
 
   pointer = matter.add.image(80, 80, 'player').setScale(0.08, 0.08)
   pointer.setDensity(0.01)
@@ -60,7 +63,7 @@ function create(this: {
 
   player.setCollisionCategory(collisionGroups.players)
 
-  sword.setCollisionCategory(collisionGroups.weapons)
+  weapon.setCollisionCategory(collisionGroups.weapons)
 
   pointer.setCollisionCategory(collisionGroups.controls)
 
@@ -68,21 +71,16 @@ function create(this: {
   pointer.setCollidesWith([])
 
   // @ts-ignore
-  const leftHand = matter.add.constraint(player, sword, 35, 0.5, {
-    pointA: { x: -15, y: 0 },
-    pointB: { x: 0, y: 40 },
-  })
-  // @ts-ignore
-  const rightHand = matter.add.constraint(player, sword, 45, 0.5, {
-    pointA: { x: 15, y: 0 },
+  const hand = matter.add.constraint(player, weapon, 1, 0.95, {
+    pointA: { x: 0, y: -ARM_LENGTH },
     pointB: { x: 0, y: 25 },
-    damping: 1,
   })
   // @ts-ignore
-  matter.add.constraint(pointer, sword, 1, 0.3, {
-    pointA: { x: 0, y: 0 },
-    pointB: { x: 0, y: -40 },
-  })
+  // matter.add.constraint(pointer, weapon, 1, 0.5, {
+  //   pointA: { x: 0, y: 0 },
+  //   pointB: { x: 0, y: -40 },
+  //   damping: 1,
+  // })
 
   cameras.main.startFollow(player)
   cameras.main.setSize(CAMERA_WIDTH, CAMERA_HEIGHT)
@@ -98,19 +96,31 @@ function create(this: {
   })
 
   WASD.W.on('down', () => {
-    const forward = new Phaser.Math.Vector2().setToPolar(player.rotation - Math.PI/2, DASH_SPEED)
+    const forward = new Phaser.Math.Vector2().setToPolar(
+      player.rotation - Math.PI / 2,
+      DASH_SPEED
+    )
     player.applyForce(forward)
   })
   WASD.A.on('down', () => {
-    const left = new Phaser.Math.Vector2().setToPolar(player.rotation - Math.PI, DASH_SPEED)
+    const left = new Phaser.Math.Vector2().setToPolar(
+      player.rotation - Math.PI,
+      DASH_SPEED
+    )
     player.applyForce(left)
   })
   WASD.S.on('down', () => {
-    const back = new Phaser.Math.Vector2().setToPolar(player.rotation + Math.PI/2, DASH_SPEED)
+    const back = new Phaser.Math.Vector2().setToPolar(
+      player.rotation + Math.PI / 2,
+      DASH_SPEED
+    )
     player.applyForce(back)
   })
   WASD.D.on('down', () => {
-    const right = new Phaser.Math.Vector2().setToPolar(player.rotation, DASH_SPEED)
+    const right = new Phaser.Math.Vector2().setToPolar(
+      player.rotation,
+      DASH_SPEED
+    )
     player.applyForce(right)
   })
   WASD.Q.on('down', () => {
@@ -122,13 +132,12 @@ function create(this: {
 
   input.on('pointermove', () => {})
   input.on('wheel', event => {
-    if (event.deltaY > 0) {
-      rightHand.pointA.y += 1
-      leftHand.pointA.y += 1
-    } else {
-      rightHand.pointA.y -= 1
-      leftHand.pointA.y -= 1
-    }
+    console.log(hand.bodyA.position)
+    // if (event.deltaY > 0) {
+    //   hand.pointA.y += 1
+    // } else {
+    //   hand.pointA.y -= 1
+    // }
   })
 }
 
@@ -138,18 +147,17 @@ function update(this: {
 }) {
   const { cameras, input } = this
 
-  const playerToCursor = new Phaser.Math.Vector2(
+  const handPosition = new Phaser.Math.Vector2(player.x, player.y - ARM_LENGTH)
+  const handToCursor = new Phaser.Math.Vector2(
     input.activePointer.x - CAMERA_WIDTH / 2,
-    input.activePointer.y - CAMERA_HEIGHT / 2
+    input.activePointer.y - (CAMERA_HEIGHT / 2 - ARM_LENGTH)
   )
-  const playerToCursorWithinOrbit = new Phaser.Math.Vector2().setToPolar(
-    playerToCursor.angle() + player.rotation,
-    110
+
+  const handToCursorWithinOrbit = new Phaser.Math.Vector2().setToPolar(
+    handToCursor.angle() + player.rotation,
+    80
   )
-  const playerPosition = new Phaser.Math.Vector2(player.x, player.y)
-  const worldCursorWithinPlayerOrbit = playerPosition.add(
-    playerToCursorWithinOrbit
-  )
+  const worldCursorWithinPlayerOrbit = handPosition.add(handToCursorWithinOrbit)
 
   pointer.setPosition(
     worldCursorWithinPlayerOrbit.x,
