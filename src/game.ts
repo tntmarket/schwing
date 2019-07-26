@@ -15,7 +15,7 @@ let WASD: {
   E: Phaser.Input.Keyboard.Key
 }
 
-const ARM_LENGTH = 35
+let wristOffset = 0
 
 let horizontalPointer: Phaser.Physics.Matter.Image
 let verticalPointer: Phaser.Physics.Matter.Image
@@ -143,16 +143,22 @@ function create(this: {
     player.setAngularVelocity(0.03)
   })
 
-  input.on('wheel', event => {})
+  input.on('wheel', (event: { deltaY: number }) => {
+    if (event.deltaY > 0) {
+      wristOffset += 0.2
+    } else {
+      wristOffset -= 0.2
+    }
+  })
 }
 
 const armPositions = (pointer: Phaser.Input.Pointer) => {
   // 40 for max up
   const verticalOffset =
-    ((CAMERA_HEIGHT - 2 * pointer.y) / CAMERA_HEIGHT + 1) * 20
+    ((CAMERA_HEIGHT - 2 * pointer.y) / CAMERA_HEIGHT + 1) * 30
 
-  // 1.7 for max right
-  const horizontalOffset = ((2 * pointer.x - CAMERA_WIDTH) / CAMERA_WIDTH) * 1.7
+  // 1 for max right
+  const horizontalOffset = ((2 * pointer.x - CAMERA_WIDTH) / CAMERA_WIDTH)
   const shoulderAngle = ((horizontalOffset - 1) * Math.PI) / 2
 
   const shoulderToHand = new Phaser.Math.Vector2().setToPolar(
@@ -160,32 +166,18 @@ const armPositions = (pointer: Phaser.Input.Pointer) => {
     verticalOffset
   )
 
-  const wristOffset = 0
-  // -90 degrees (vertical) at neutral. 0 degrees (to the right) at maximum.
-  const wristAngle = ((wristOffset - 1) * Math.PI) / 2
-
   const playerPosition = new Phaser.Math.Vector2(player.x, player.y)
   const hand = playerPosition.add(shoulderToHand)
   const handToTip = new Phaser.Math.Vector2().setToPolar(
-    player.rotation + shoulderAngle,
+    player.rotation + shoulderAngle + wristOffset,
     70 // weapon length
   )
 
   return {
     hand,
+    shoulderAngle,
     tip: new Phaser.Math.Vector2().add(playerPosition).add(handToTip),
   }
-}
-
-const weaponTipOrbitFromHand = handPosition => {
-  const wristOffset = 0
-  // -90 degrees (vertical) at neutral. 0 degrees (to the right) at maximum.
-  const handOffsetAngle = ((wristOffset - 1) * Math.PI) / 2
-  const handToWeaponTip = new Phaser.Math.Vector2().setToPolar(
-    handOffsetAngle + player.rotation,
-    70
-  )
-  return handPosition.add(handToWeaponTip)
 }
 
 function update(this: {
@@ -196,6 +188,7 @@ function update(this: {
 
   const positions = armPositions(input.activePointer)
   verticalPointer.setPosition(positions.hand.x, positions.hand.y)
+  verticalPointer.setRotation(positions.shoulderAngle)
 
   horizontalPointer.setPosition(positions.tip.x, positions.tip.y)
 
