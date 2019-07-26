@@ -37,15 +37,15 @@ function create(this: {
 }) {
   const { cameras, input, matter } = this
 
-  matter.world.setBounds(0, 0, WIDTH, HEIGHT)
+  matter.world.setBounds(-WIDTH / 2, -HEIGHT / 2, WIDTH, HEIGHT)
 
   matter.add.rectangle(200, 200, 10, 100, {})
 
-  player = matter.add.image(10, 10, 'player').setScale(0.2, 0.2)
+  player = matter.add.image(0, 0, 'player').setScale(0.2, 0.2)
   player.setDensity(1)
   player.setFriction(1, 0.05)
 
-  const sword = matter.add.image(100, 100, 'sword').setScale(2, -2)
+  const sword = matter.add.image(0, -100, 'sword').setScale(2, -2)
   sword.setDensity(0.001)
   sword.setFriction(1, 0.05)
 
@@ -76,20 +76,20 @@ function create(this: {
   // pointer.setCollidesWith([])
 
   // @ts-ignore
-  const leftHand = matter.add.constraint(player, sword, 40, 0.5, {
+  const leftHand = matter.add.constraint(player, sword, 35, 0.5, {
     pointA: { x: -15, y: 0 },
-    pointB: { x: 0, y: -25 },
-  })
-  // @ts-ignore
-  const rightHand = matter.add.constraint(player, sword, 40, 0.5, {
-    pointA: { x: 15, y: 0 },
-    pointB: { x: 0, y: -35 },
-  })
-  // @ts-ignore
-  matter.add.constraint(pointer, sword, 1, 0.1, {
-    pointA: { x: 0, y: 0 },
     pointB: { x: 0, y: 40 },
+  })
+  // @ts-ignore
+  const rightHand = matter.add.constraint(player, sword, 45, 0.5, {
+    pointA: { x: 15, y: 0 },
+    pointB: { x: 0, y: 25 },
     damping: 1,
+  })
+  // @ts-ignore
+  matter.add.constraint(pointer, sword, 1, 0.3, {
+    pointA: { x: 0, y: 0 },
+    pointB: { x: 0, y: -40 },
   })
 
   cameras.main.startFollow(player)
@@ -149,20 +149,25 @@ function update(this: {
 }) {
   const { cameras, input } = this
 
-  const playerPosition = new Phaser.Math.Vector2(player.x, player.y)
-  const cursorPosition = new Phaser.Math.Vector2(
-    input.activePointer.worldX,
-    input.activePointer.worldY
+  const playerToCursor = new Phaser.Math.Vector2(
+    input.activePointer.x - CAMERA_WIDTH / 2,
+    input.activePointer.y - CAMERA_HEIGHT / 2
   )
-  const orbitPosition = cursorPosition
-    .subtract(playerPosition)
-    .normalize()
-    .scale(110)
-    .add(playerPosition)
-  pointer.setPosition(orbitPosition.x, orbitPosition.y)
+  const playerToCursorWithinOrbit = new Phaser.Math.Vector2().setToPolar(
+    playerToCursor.angle() + player.rotation,
+    110
+  )
+  const playerPosition = new Phaser.Math.Vector2(player.x, player.y)
+  const worldCursorWithinPlayerOrbit = playerPosition.add(
+    playerToCursorWithinOrbit
+  )
+
+  pointer.setPosition(
+    worldCursorWithinPlayerOrbit.x,
+    worldCursorWithinPlayerOrbit.y
+  )
 
   cameras.main.setRotation(-player.rotation)
-  console.log(player.rotation/Math.PI/2)
 }
 
 export const startGame = (type /* istanbul ignore next */ = Phaser.AUTO) => {
