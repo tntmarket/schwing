@@ -1,9 +1,9 @@
 import 'phaser'
 
-const WIDTH = 1000
+const WIDTH = 400
 const HEIGHT = 1000
 
-const CAMERA_WIDTH = 600
+const CAMERA_WIDTH = 400
 const CAMERA_HEIGHT = 600
 
 let WASD: {
