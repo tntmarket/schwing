@@ -17,7 +17,8 @@ let WASD: {
 
 const ARM_LENGTH = 35
 
-let pointer: Phaser.Physics.Matter.Image
+let horizontalPointer: Phaser.Physics.Matter.Image
+let verticalPointer: Phaser.Physics.Matter.Image
 let player: Phaser.Physics.Matter.Image
 let weapon: Phaser.Physics.Matter.Image
 
@@ -58,8 +59,11 @@ function create(this: {
   weapon.setDensity(0.004)
   weapon.setFriction(1, 0.05)
 
-  pointer = matter.add.image(80, 80, 'player').setScale(0.08, 0.08)
-  pointer.setDensity(0.01)
+  horizontalPointer = matter.add.image(80, 80, 'player').setScale(0.08, 0.08)
+  horizontalPointer.setDensity(0.01)
+
+  verticalPointer = matter.add.image(80, 80, 'player').setScale(0.08, 0.08)
+  verticalPointer.setDensity(0.01)
 
   const collisionGroups = {
     terrain: 1,
@@ -72,18 +76,20 @@ function create(this: {
 
   weapon.setCollisionCategory(collisionGroups.weapons)
 
-  pointer.setCollisionCategory(collisionGroups.controls)
+  horizontalPointer.setCollisionCategory(collisionGroups.controls)
+  verticalPointer.setCollisionCategory(collisionGroups.controls)
 
   player.setCollidesWith([collisionGroups.terrain, collisionGroups.players])
-  pointer.setCollidesWith([])
+  horizontalPointer.setCollidesWith([])
+  verticalPointer.setCollidesWith([])
 
   // @ts-ignore
-  const hand = matter.add.constraint(player, weapon, 1, 0.95, {
-    pointA: { x: 0, y: -ARM_LENGTH },
+  matter.add.constraint(verticalPointer, weapon, 1, 1, {
+    pointA: { x: 0, y: 0 },
     pointB: { x: 0, y: 25 },
   })
   // @ts-ignore
-  matter.add.constraint(pointer, weapon, 1, 0.6, {
+  matter.add.constraint(horizontalPointer, weapon, 1, 0.3, {
     pointA: { x: 0, y: 0 },
     pointB: { x: 0, y: -40 },
     damping: 1,
@@ -139,16 +145,24 @@ function create(this: {
 
   input.on('pointermove', () => {})
   input.on('wheel', event => {
-    console.log(hand.bodyA.position)
-    // if (event.deltaY > 0) {
-    //   hand.pointA.y += 1
-    // } else {
-    //   hand.pointA.y -= 1
-    // }
   })
 }
 
-const weaponTipOrbitFromHand = pointerX => {
+const handPosition = pointerY => {
+  // 40 for max up
+  const verticalOffset = ((CAMERA_HEIGHT - 2 * pointerY) / CAMERA_HEIGHT + 1) * 30
+
+  const playerToHand = new Phaser.Math.Vector2().setToPolar(
+    player.rotation - Math.PI / 2,
+    verticalOffset
+  )
+
+  return new Phaser.Math.Vector2(player.x, player.y).add(
+    playerToHand
+  )
+}
+
+const weaponTipOrbitFromHand = (pointerX, handPosition) => {
   // 1.7 for max right
   const horizontalOffset = ((2 * pointerX - CAMERA_WIDTH) / CAMERA_WIDTH) * 1.7
   // -90 degrees (vertical) at neutral. 0 degrees (to the right) at maximum.
@@ -157,9 +171,6 @@ const weaponTipOrbitFromHand = pointerX => {
     player.rotation - Math.PI / 2,
     ARM_LENGTH
   )
-  const handPosition = new Phaser.Math.Vector2(player.x, player.y).add(
-    playerToHand
-  )
   const handToWeaponTip = new Phaser.Math.Vector2().setToPolar(
     handOffsetAngle + player.rotation,
     70
@@ -167,14 +178,21 @@ const weaponTipOrbitFromHand = pointerX => {
   return handPosition.add(handToWeaponTip)
 }
 
+
 function update(this: {
   cameras: Phaser.Cameras.Scene2D.CameraManager
   input: Phaser.Input.InputPlugin
 }) {
   const { cameras, input } = this
 
-  const weaponTipPointerPosition = weaponTipOrbitFromHand(input.activePointer.x)
-  pointer.setPosition(weaponTipPointerPosition.x, weaponTipPointerPosition.y)
+  const hand = handPosition(input.activePointer.y)
+  verticalPointer.setPosition(hand.x, hand.y)
+
+  const weaponTipPointerPosition = weaponTipOrbitFromHand(input.activePointer.x, hand)
+  horizontalPointer.setPosition(
+    weaponTipPointerPosition.x,
+    weaponTipPointerPosition.y
+  )
 
   cameras.main.setRotation(-player.rotation)
 }
