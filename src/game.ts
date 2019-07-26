@@ -1,5 +1,4 @@
 import 'phaser'
-import { Composite } from 'matter-js'
 
 const WIDTH = 1000
 const HEIGHT = 1000
@@ -52,10 +51,6 @@ function create(this: {
   pointer = matter.add.image(80, 80, 'player').setScale(0.08, 0.08)
   pointer.setDensity(0.01)
 
-  // const player = Composite.create()
-  // Composite.add(player, player)
-  // Composite.add(player, sword)
-
   const collisionGroups = {
     terrain: 1,
     players: matter.world.nextCategory(),
@@ -64,7 +59,6 @@ function create(this: {
   }
 
   player.setCollisionCategory(collisionGroups.players)
-  // player.setRotation(Math.PI)
 
   sword.setCollisionCategory(collisionGroups.weapons)
 
@@ -72,8 +66,6 @@ function create(this: {
 
   player.setCollidesWith([collisionGroups.terrain, collisionGroups.players])
   pointer.setCollidesWith([])
-
-  // pointer.setCollidesWith([])
 
   // @ts-ignore
   const leftHand = matter.add.constraint(player, sword, 35, 0.5, {
@@ -106,29 +98,26 @@ function create(this: {
   })
 
   WASD.W.on('down', () => {
-    // player.setVelocity(0, -DASH_SPEED)
-    // const dashForce = new Phaser.Math.Vector2().setToPolar(player.rotation, DASH_SPEED);
-    // console.log(dashForce.x, dashForce.y)
-    // player.applyForce(dashForce)
-    player.applyForce(new Phaser.Math.Vector2(0, -DASH_SPEED))
+    const forward = new Phaser.Math.Vector2().setToPolar(player.rotation - Math.PI/2, DASH_SPEED)
+    player.applyForce(forward)
   })
   WASD.A.on('down', () => {
-    // player.setVelocity(-DASH_SPEED, 0)
-    player.applyForce(new Phaser.Math.Vector2(-DASH_SPEED, 0))
+    const left = new Phaser.Math.Vector2().setToPolar(player.rotation - Math.PI, DASH_SPEED)
+    player.applyForce(left)
   })
   WASD.S.on('down', () => {
-    // player.setVelocity(0, DASH_SPEED)
-    player.applyForce(new Phaser.Math.Vector2(0, DASH_SPEED))
+    const back = new Phaser.Math.Vector2().setToPolar(player.rotation + Math.PI/2, DASH_SPEED)
+    player.applyForce(back)
   })
   WASD.D.on('down', () => {
-    // player.setVelocity(DASH_SPEED, 0)
-    player.applyForce(new Phaser.Math.Vector2(DASH_SPEED, 0))
+    const right = new Phaser.Math.Vector2().setToPolar(player.rotation, DASH_SPEED)
+    player.applyForce(right)
   })
   WASD.Q.on('down', () => {
-    player.setAngularVelocity(-0.01)
+    player.setAngularVelocity(-0.03)
   })
   WASD.E.on('down', () => {
-    player.setAngularVelocity(0.01)
+    player.setAngularVelocity(0.03)
   })
 
   input.on('pointermove', () => {})
