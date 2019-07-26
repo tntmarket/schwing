@@ -76,11 +76,11 @@ function create(this: {
     pointB: { x: 0, y: 25 },
   })
   // @ts-ignore
-  // matter.add.constraint(pointer, weapon, 1, 0.5, {
-  //   pointA: { x: 0, y: 0 },
-  //   pointB: { x: 0, y: -40 },
-  //   damping: 1,
-  // })
+  matter.add.constraint(pointer, weapon, 1, 0.5, {
+    pointA: { x: 0, y: 0 },
+    pointB: { x: 0, y: -40 },
+    damping: 1,
+  })
 
   cameras.main.startFollow(player)
   cameras.main.setSize(CAMERA_WIDTH, CAMERA_HEIGHT)
@@ -141,27 +141,35 @@ function create(this: {
   })
 }
 
+const weaponTipOrbitFromHand = pointerX => {
+  // 1.7 for max right
+  const horizontalOffset = (2 * pointerX - CAMERA_WIDTH) / CAMERA_WIDTH * 1.7
+  // -90 degrees (vertical) at neutral. 0 degrees (to the right) at maximum.
+  const handOffsetAngle = ((horizontalOffset - 1) * Math.PI) / 2
+  const playerToHand = new Phaser.Math.Vector2().setToPolar(
+    player.rotation - Math.PI / 2,
+    ARM_LENGTH
+  )
+  const handPosition = new Phaser.Math.Vector2(player.x, player.y).add(
+    playerToHand
+  )
+  const handToWeaponTip = new Phaser.Math.Vector2().setToPolar(
+    handOffsetAngle + player.rotation,
+    70
+  )
+  return handPosition.add(handToWeaponTip)
+}
+
 function update(this: {
   cameras: Phaser.Cameras.Scene2D.CameraManager
   input: Phaser.Input.InputPlugin
 }) {
   const { cameras, input } = this
 
-  const handPosition = new Phaser.Math.Vector2(player.x, player.y - ARM_LENGTH)
-  const handToCursor = new Phaser.Math.Vector2(
-    input.activePointer.x - CAMERA_WIDTH / 2,
-    input.activePointer.y - (CAMERA_HEIGHT / 2 - ARM_LENGTH)
-  )
-
-  const handToCursorWithinOrbit = new Phaser.Math.Vector2().setToPolar(
-    handToCursor.angle() + player.rotation,
-    80
-  )
-  const worldCursorWithinPlayerOrbit = handPosition.add(handToCursorWithinOrbit)
-
+  const weaponTipPointerPosition = weaponTipOrbitFromHand(input.activePointer.x)
   pointer.setPosition(
-    worldCursorWithinPlayerOrbit.x,
-    worldCursorWithinPlayerOrbit.y
+    weaponTipPointerPosition.x,
+    weaponTipPointerPosition.y
   )
 
   cameras.main.setRotation(-player.rotation)
