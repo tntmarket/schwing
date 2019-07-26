@@ -17,8 +17,8 @@ let WASD: {
 
 let wristOffset = 0
 
-let horizontalPointer: Phaser.Physics.Matter.Image
-let verticalPointer: Phaser.Physics.Matter.Image
+let weaponTipMagnet: Phaser.Physics.Matter.Image
+let weaponHiltMagnet: Phaser.Physics.Matter.Image
 let player: Phaser.Physics.Matter.Image
 let weapon: Phaser.Physics.Matter.Image
 
@@ -59,11 +59,11 @@ function create(this: {
   weapon.setDensity(0.001)
   weapon.setFriction(1, 0.05)
 
-  horizontalPointer = matter.add.image(80, 80, 'player').setScale(0.08, 0.08)
-  horizontalPointer.setDensity(0.01)
+  weaponTipMagnet = matter.add.image(80, 80, 'player').setScale(0.08, 0.08)
+  weaponTipMagnet.setDensity(0.01)
 
-  verticalPointer = matter.add.image(80, 80, 'player').setScale(0.08, 0.08)
-  verticalPointer.setDensity(0.01)
+  weaponHiltMagnet = matter.add.image(80, 80, 'player').setScale(0.08, 0.08)
+  weaponHiltMagnet.setDensity(0.01)
 
   const collisionGroups = {
     terrain: 1,
@@ -76,20 +76,20 @@ function create(this: {
 
   weapon.setCollisionCategory(collisionGroups.weapons)
 
-  horizontalPointer.setCollisionCategory(collisionGroups.controls)
-  verticalPointer.setCollisionCategory(collisionGroups.controls)
+  weaponTipMagnet.setCollisionCategory(collisionGroups.controls)
+  weaponHiltMagnet.setCollisionCategory(collisionGroups.controls)
 
   player.setCollidesWith([collisionGroups.terrain, collisionGroups.players])
-  horizontalPointer.setCollidesWith([])
-  verticalPointer.setCollidesWith([])
+  weaponTipMagnet.setCollidesWith([])
+  weaponHiltMagnet.setCollidesWith([])
 
   // @ts-ignore
-  matter.add.constraint(verticalPointer, weapon, 1, 0.95, {
+  matter.add.constraint(weaponHiltMagnet, weapon, 1, 0.95, {
     pointA: { x: 0, y: 0 },
     pointB: { x: 0, y: 25 },
   })
   // @ts-ignore
-  matter.add.constraint(horizontalPointer, weapon, 1, 0.3, {
+  matter.add.constraint(weaponTipMagnet, weapon, 1, 0.3, {
     pointA: { x: 0, y: 0 },
     pointB: { x: 0, y: -40 },
     damping: 1,
@@ -187,10 +187,10 @@ function update(this: {
   const { cameras, input } = this
 
   const positions = armPositions(input.activePointer)
-  verticalPointer.setPosition(positions.hand.x, positions.hand.y)
-  verticalPointer.setRotation(positions.shoulderAngle)
+  weaponHiltMagnet.setPosition(positions.hand.x, positions.hand.y)
+  weaponHiltMagnet.setRotation(positions.shoulderAngle)
 
-  horizontalPointer.setPosition(positions.tip.x, positions.tip.y)
+  weaponTipMagnet.setPosition(positions.tip.x, positions.tip.y)
 
   cameras.main.setRotation(-player.rotation)
 }
