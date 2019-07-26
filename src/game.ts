@@ -13,6 +13,7 @@ let WASD: {
   D: Phaser.Input.Keyboard.Key
   Q: Phaser.Input.Keyboard.Key
   E: Phaser.Input.Keyboard.Key
+  F: Phaser.Input.Keyboard.Key
 }
 
 // 1 means 90 degrees
@@ -23,7 +24,7 @@ let weaponBaseMagnet: Phaser.Physics.Matter.Image
 let player: Phaser.Physics.Matter.Image
 let weapon: Phaser.Physics.Matter.Image
 
-const DASH_SPEED = 8
+const DASH_SPEED = 4
 
 /* istanbul ignore next */
 function preload(this: { load: Phaser.Loader.LoaderPlugin }) {
@@ -31,6 +32,7 @@ function preload(this: { load: Phaser.Loader.LoaderPlugin }) {
 
   load.image('sword', '/assets/rapier.png')
   load.image('player', 'http://labs.phaser.io/assets/particles/red.png')
+  load.image('background', 'http://labs.phaser.io/assets/skies/fog.png')
 }
 
 /* istanbul ignore next */
@@ -39,26 +41,28 @@ function create(this: {
   input: Phaser.Input.InputPlugin
   matter: Phaser.Physics.Matter.MatterPhysics
 }) {
-  const { cameras, input, matter } = this
+  const { add, cameras, input, matter } = this
 
+  const background = add.image(0, 0, 'background')
+  background.displayWidth = WIDTH
+  background.displayHeight = HEIGHT
+
+  matter.world.update60Hz()
   matter.world.setBounds(-WIDTH / 2, -HEIGHT / 2, WIDTH, HEIGHT)
 
-  matter.add.rectangle(-400, -400, 20, 70, {})
-  matter.add.rectangle(-300, -300, 10, 70, {})
-  matter.add.rectangle(-200, -200, 20, 70, {})
-  matter.add.rectangle(-100, -100, 10, 70, {})
-  matter.add.rectangle(100, 100, 20, 70, {})
-  matter.add.rectangle(200, 200, 10, 70, {})
-  matter.add.rectangle(300, 300, 20, 70, {})
-  matter.add.rectangle(400, 400, 10, 70, {})
+  const otherWeapon = matter.add.image(100, 100, 'sword').setScale(2, -2)
+  otherWeapon.setDensity(0.00002)
+  otherWeapon.setFriction(0, 0.01)
+  otherWeapon.setBounce(0.7)
 
   player = matter.add.image(0, 0, 'player').setScale(0.2, 0.2)
-  player.setDensity(1)
+  player.setDensity(0.5)
   player.setFriction(1, 0.05)
 
   weapon = matter.add.image(0, -100, 'sword').setScale(2, -2)
   weapon.setDensity(0.00002)
-  weapon.setFriction(1, 0.05)
+  weapon.setFriction(0, 0.01)
+  weapon.setBounce(0.7)
 
   weaponHiltMagnet = matter.add.image(80, 80, 'player').setScale(0.08, 0.08)
   weaponHiltMagnet.setDensity(0.01)
@@ -85,13 +89,13 @@ function create(this: {
   weaponBaseMagnet.setCollidesWith([])
 
   // @ts-ignore
-  matter.add.constraint(weaponBaseMagnet, weapon, 1, 0.95, {
+  matter.add.constraint(weaponBaseMagnet, weapon, 1, 0.99, {
     pointA: { x: 0, y: 0 },
     pointB: { x: 0, y: 35 },
     damping: 1,
   })
   // @ts-ignore
-  matter.add.constraint(weaponHiltMagnet, weapon, 1, 0.95, {
+  matter.add.constraint(weaponHiltMagnet, weapon, 1, 0.99, {
     pointA: { x: 0, y: 0 },
     pointB: { x: 0, y: 20 },
     damping: 1,
@@ -151,7 +155,6 @@ function create(this: {
     } else {
       wristOffset = Math.max(wristOffset - 0.1, -1.5)
     }
-    console.log(wristOffset)
   })
 }
 
@@ -214,7 +217,7 @@ export const startGame = (type /* istanbul ignore next */ = Phaser.AUTO) => {
         gravity: {
           y: 0,
         },
-        debug: true,
+        // debug: true,
       },
     },
     scene: {
