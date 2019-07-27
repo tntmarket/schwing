@@ -1,7 +1,5 @@
 import 'phaser'
-
-const WIDTH = 400
-const HEIGHT = 1000
+import { COLLISION_GROUPS, createWorld, HEIGHT, WIDTH } from 'ROOT/world'
 
 const CAMERA_WIDTH = 400
 const CAMERA_HEIGHT = 600
@@ -18,12 +16,6 @@ let WASD: {
 
 const DASH_SPEED = 4
 
-let COLLISION_GROUPS: {
-  terrain: number
-  players: number
-  weapons: number
-  controls: number
-}
 type Player = {
   wristOffset: number // 1 means 90 degrees
   weaponHiltMagnet: Phaser.Physics.Matter.Image
@@ -164,20 +156,12 @@ function create(this: {
   background.displayWidth = WIDTH
   background.displayHeight = HEIGHT
 
-  matter.world.update60Hz()
-  matter.world.setBounds(-WIDTH / 2, -HEIGHT / 2, WIDTH, HEIGHT)
+  createWorld(matter)
 
   const otherWeapon = matter.add.image(100, 100, 'sword').setScale(2, -2)
   otherWeapon.setDensity(0.00002)
   otherWeapon.setFriction(0, 0.01)
   otherWeapon.setBounce(0.7)
-
-  COLLISION_GROUPS = {
-    terrain: 1,
-    players: matter.world.nextCategory(),
-    weapons: matter.world.nextCategory(),
-    controls: matter.world.nextCategory(),
-  }
 
   player = createPlayer(matter)
   controlPlayer(player, input)
