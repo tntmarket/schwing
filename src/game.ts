@@ -1,18 +1,21 @@
 import 'phaser'
 import { createWorld, HEIGHT, WIDTH } from 'ROOT/world'
 import { controlPlayer, createPlayer, handPositions, Player } from 'ROOT/player'
+import { ratio } from 'ROOT/units'
 
 const CAMERA_WIDTH = 400
 const CAMERA_HEIGHT = 600
 
 let player: Player
+let player2: Player
 
 /* istanbul ignore next */
 function preload(this: { load: Phaser.Loader.LoaderPlugin }) {
   const { load } = this
 
   load.image('sword', '/assets/rapier.png')
-  load.image('player', 'http://labs.phaser.io/assets/particles/red.png')
+  load.image('red', 'http://labs.phaser.io/assets/particles/red.png')
+  load.image('yellow', 'http://labs.phaser.io/assets/particles/yellow.png')
   load.image('background', 'http://labs.phaser.io/assets/skies/fog.png')
 }
 
@@ -31,10 +34,7 @@ function create(this: {
 
   createWorld(matter)
 
-  const otherWeapon = matter.add.image(100, 100, 'sword').setScale(2, -2)
-  otherWeapon.setDensity(0.00002)
-  otherWeapon.setFriction(0, 0.01)
-  otherWeapon.setBounce(0.7)
+  player2 = createPlayer(matter, 0, -200, Math.PI / 2, 'yellow')
 
   player = createPlayer(matter)
   controlPlayer(player, input)
@@ -43,20 +43,37 @@ function create(this: {
   cameras.main.setSize(CAMERA_WIDTH, CAMERA_HEIGHT)
 }
 
+const setHandPosition = (
+  player: Player,
+  armLength: ratio,
+  shoulderAngle: ratio
+) => {
+  const positions = handPositions(
+    player.head,
+    player.wristAngle,
+    armLength,
+    shoulderAngle
+  )
+  player.wrist.setPosition(positions.wrist.x, positions.wrist.y)
+  player.fingers.setPosition(positions.fingers.x, positions.fingers.y)
+}
+
 function update(this: {
   cameras: Phaser.Cameras.Scene2D.CameraManager
   input: Phaser.Input.InputPlugin
 }) {
   const { cameras, input } = this
 
-  const positions = handPositions(
-    player.head,
-    player.wristAngle,
+  setHandPosition(
+    player,
     (CAMERA_HEIGHT - 2 * input.activePointer.y) / CAMERA_HEIGHT + 1,
     (2 * input.activePointer.x - CAMERA_WIDTH) / CAMERA_WIDTH
   )
-  player.wrist.setPosition(positions.wrist.x, positions.wrist.y)
-  player.fingers.setPosition(positions.fingers.x, positions.fingers.y)
+  setHandPosition(
+    player2,
+    1,
+    1,
+  )
 
   cameras.main.setRotation(-player.head.rotation)
 }
@@ -76,7 +93,7 @@ export const startGame = (type /* istanbul ignore next */ = Phaser.AUTO) => {
         gravity: {
           y: 0,
         },
-        // debug: true,
+        debug: true,
       },
     },
     scene: {

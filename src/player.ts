@@ -22,21 +22,25 @@ export type Player = {
 }
 
 export const createPlayer = (
-  matter: Phaser.Physics.Matter.MatterPhysics
+  matter: Phaser.Physics.Matter.MatterPhysics,
+  spawnX: number = 0,
+  spawnY: number = 0,
+  spawnRotation: number = 0,
+  texture: string = 'red'
 ): Player => {
-  const head = matter.add.image(0, 0, 'player').setScale(0.2, 0.2)
+  const head = matter.add.image(spawnX, spawnY, texture).setScale(0.2, 0.2)
   head.setDensity(0.5)
   head.setFriction(1, 0.05)
 
-  const weapon = matter.add.image(0, -100, 'sword').setScale(2, -2)
+  const weapon = matter.add.image(spawnX, spawnY - 100, 'sword').setScale(2, -2)
   weapon.setDensity(0.00002)
   weapon.setFriction(0, 0.01)
   weapon.setBounce(0.7)
 
-  const fingers = matter.add.image(80, 80, 'player').setScale(0.08, 0.08)
+  const fingers = matter.add.image(spawnX, -80, texture).setScale(0.08, 0.08)
   fingers.setDensity(0.01)
 
-  const wrist = matter.add.image(80, 80, 'player').setScale(0.08, 0.08)
+  const wrist = matter.add.image(spawnX, -60, texture).setScale(0.08, 0.08)
   wrist.setDensity(0.01)
 
   head.setCollisionCategory(COLLISION_GROUPS.players)
@@ -62,6 +66,8 @@ export const createPlayer = (
     pointB: { x: 0, y: 20 },
     damping: 1,
   })
+
+  head.setRotation(spawnRotation)
 
   return {
     wristAngle: 0,
