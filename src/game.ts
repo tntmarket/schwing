@@ -16,15 +16,23 @@ let WASD: {
   F: Phaser.Input.Keyboard.Key
 }
 
-// 1 means 90 degrees
-let wristOffset = 0
-
-let weaponHiltMagnet: Phaser.Physics.Matter.Image
-let weaponBaseMagnet: Phaser.Physics.Matter.Image
-let player: Phaser.Physics.Matter.Image
-let weapon: Phaser.Physics.Matter.Image
-
 const DASH_SPEED = 4
+
+let COLLISION_GROUPS: {
+  terrain: number
+  players: number
+  weapons: number
+  controls: number
+}
+type Player = {
+  wristOffset: number // 1 means 90 degrees
+  weaponHiltMagnet: Phaser.Physics.Matter.Image
+  weaponBaseMagnet: Phaser.Physics.Matter.Image
+  head: Phaser.Physics.Matter.Image
+  weapon: Phaser.Physics.Matter.Image
+}
+
+let player: Player
 
 /* istanbul ignore next */
 function preload(this: { load: Phaser.Loader.LoaderPlugin }) {
@@ -35,8 +43,117 @@ function preload(this: { load: Phaser.Loader.LoaderPlugin }) {
   load.image('background', 'http://labs.phaser.io/assets/skies/fog.png')
 }
 
+const createPlayer = (matter: Phaser.Physics.Matter.MatterPhysics): Player => {
+  const head = matter.add.image(0, 0, 'player').setScale(0.2, 0.2)
+  head.setDensity(0.5)
+  head.setFriction(1, 0.05)
+
+  const weapon = matter.add.image(0, -100, 'sword').setScale(2, -2)
+  weapon.setDensity(0.00002)
+  weapon.setFriction(0, 0.01)
+  weapon.setBounce(0.7)
+
+  const weaponHiltMagnet = matter.add
+    .image(80, 80, 'player')
+    .setScale(0.08, 0.08)
+  weaponHiltMagnet.setDensity(0.01)
+
+  const weaponBaseMagnet = matter.add
+    .image(80, 80, 'player')
+    .setScale(0.08, 0.08)
+  weaponBaseMagnet.setDensity(0.01)
+
+  head.setCollisionCategory(COLLISION_GROUPS.players)
+
+  weapon.setCollisionCategory(COLLISION_GROUPS.weapons)
+
+  weaponHiltMagnet.setCollisionCategory(COLLISION_GROUPS.controls)
+  weaponBaseMagnet.setCollisionCategory(COLLISION_GROUPS.controls)
+
+  head.setCollidesWith([COLLISION_GROUPS.terrain, COLLISION_GROUPS.players])
+  weaponHiltMagnet.setCollidesWith([])
+  weaponBaseMagnet.setCollidesWith([])
+
+  // @ts-ignore
+  matter.add.constraint(weaponBaseMagnet, weapon, 1, 0.99, {
+    pointA: { x: 0, y: 0 },
+    pointB: { x: 0, y: 35 },
+    damping: 1,
+  })
+  // @ts-ignore
+  matter.add.constraint(weaponHiltMagnet, weapon, 1, 0.99, {
+    pointA: { x: 0, y: 0 },
+    pointB: { x: 0, y: 20 },
+    damping: 1,
+  })
+
+  return {
+    wristOffset: 0,
+    weaponHiltMagnet,
+    weaponBaseMagnet,
+    head,
+    weapon,
+  }
+}
+
+const controlPlayer = (player: Player, input: Phaser.Input.InputPlugin) => {
+  // @ts-ignore
+  WASD = input.keyboard.addKeys({
+    W: Phaser.Input.Keyboard.KeyCodes.W,
+    A: Phaser.Input.Keyboard.KeyCodes.A,
+    S: Phaser.Input.Keyboard.KeyCodes.S,
+    D: Phaser.Input.Keyboard.KeyCodes.D,
+    Q: Phaser.Input.Keyboard.KeyCodes.Q,
+    E: Phaser.Input.Keyboard.KeyCodes.E,
+  })
+
+  WASD.W.on('down', () => {
+    const forward = new Phaser.Math.Vector2().setToPolar(
+      player.head.rotation - Math.PI / 2,
+      DASH_SPEED
+    )
+    player.head.applyForce(forward)
+  })
+  WASD.A.on('down', () => {
+    const left = new Phaser.Math.Vector2().setToPolar(
+      player.head.rotation - Math.PI,
+      DASH_SPEED
+    )
+    player.head.applyForce(left)
+  })
+  WASD.S.on('down', () => {
+    const back = new Phaser.Math.Vector2().setToPolar(
+      player.head.rotation + Math.PI / 2,
+      DASH_SPEED
+    )
+    player.head.applyForce(back)
+  })
+  WASD.D.on('down', () => {
+    const right = new Phaser.Math.Vector2().setToPolar(
+      player.head.rotation,
+      DASH_SPEED
+    )
+    player.head.applyForce(right)
+  })
+  WASD.Q.on('down', () => {
+    player.head.setAngularVelocity(-0.03)
+  })
+  WASD.E.on('down', () => {
+    player.head.setAngularVelocity(0.03)
+  })
+
+  input.on('wheel', (event: { deltaY: number }) => {
+    if (event.deltaY > 0) {
+      player.wristOffset = Math.min(player.wristOffset + 0.1, 1.5)
+    } else {
+      player.wristOffset = Math.max(player.wristOffset - 0.1, -1.5)
+    }
+  })
+}
+
 /* istanbul ignore next */
 function create(this: {
+  add: Phaser.GameObjects.GameObjectFactory
   cameras: Phaser.Cameras.Scene2D.CameraManager
   input: Phaser.Input.InputPlugin
   matter: Phaser.Physics.Matter.MatterPhysics
@@ -55,107 +172,18 @@ function create(this: {
   otherWeapon.setFriction(0, 0.01)
   otherWeapon.setBounce(0.7)
 
-  player = matter.add.image(0, 0, 'player').setScale(0.2, 0.2)
-  player.setDensity(0.5)
-  player.setFriction(1, 0.05)
-
-  weapon = matter.add.image(0, -100, 'sword').setScale(2, -2)
-  weapon.setDensity(0.00002)
-  weapon.setFriction(0, 0.01)
-  weapon.setBounce(0.7)
-
-  weaponHiltMagnet = matter.add.image(80, 80, 'player').setScale(0.08, 0.08)
-  weaponHiltMagnet.setDensity(0.01)
-
-  weaponBaseMagnet = matter.add.image(80, 80, 'player').setScale(0.08, 0.08)
-  weaponBaseMagnet.setDensity(0.01)
-
-  const collisionGroups = {
+  COLLISION_GROUPS = {
     terrain: 1,
     players: matter.world.nextCategory(),
     weapons: matter.world.nextCategory(),
     controls: matter.world.nextCategory(),
   }
 
-  player.setCollisionCategory(collisionGroups.players)
+  player = createPlayer(matter)
+  controlPlayer(player, input)
 
-  weapon.setCollisionCategory(collisionGroups.weapons)
-
-  weaponHiltMagnet.setCollisionCategory(collisionGroups.controls)
-  weaponBaseMagnet.setCollisionCategory(collisionGroups.controls)
-
-  player.setCollidesWith([collisionGroups.terrain, collisionGroups.players])
-  weaponHiltMagnet.setCollidesWith([])
-  weaponBaseMagnet.setCollidesWith([])
-
-  // @ts-ignore
-  matter.add.constraint(weaponBaseMagnet, weapon, 1, 0.99, {
-    pointA: { x: 0, y: 0 },
-    pointB: { x: 0, y: 35 },
-    damping: 1,
-  })
-  // @ts-ignore
-  matter.add.constraint(weaponHiltMagnet, weapon, 1, 0.99, {
-    pointA: { x: 0, y: 0 },
-    pointB: { x: 0, y: 20 },
-    damping: 1,
-  })
-
-  cameras.main.startFollow(player)
+  cameras.main.startFollow(player.head)
   cameras.main.setSize(CAMERA_WIDTH, CAMERA_HEIGHT)
-
-  // @ts-ignore
-  WASD = input.keyboard.addKeys({
-    W: Phaser.Input.Keyboard.KeyCodes.W,
-    A: Phaser.Input.Keyboard.KeyCodes.A,
-    S: Phaser.Input.Keyboard.KeyCodes.S,
-    D: Phaser.Input.Keyboard.KeyCodes.D,
-    Q: Phaser.Input.Keyboard.KeyCodes.Q,
-    E: Phaser.Input.Keyboard.KeyCodes.E,
-  })
-
-  WASD.W.on('down', () => {
-    const forward = new Phaser.Math.Vector2().setToPolar(
-      player.rotation - Math.PI / 2,
-      DASH_SPEED
-    )
-    player.applyForce(forward)
-  })
-  WASD.A.on('down', () => {
-    const left = new Phaser.Math.Vector2().setToPolar(
-      player.rotation - Math.PI,
-      DASH_SPEED
-    )
-    player.applyForce(left)
-  })
-  WASD.S.on('down', () => {
-    const back = new Phaser.Math.Vector2().setToPolar(
-      player.rotation + Math.PI / 2,
-      DASH_SPEED
-    )
-    player.applyForce(back)
-  })
-  WASD.D.on('down', () => {
-    const right = new Phaser.Math.Vector2().setToPolar(
-      player.rotation,
-      DASH_SPEED
-    )
-    player.applyForce(right)
-  })
-  WASD.Q.on('down', () => {
-    player.setAngularVelocity(-0.03)
-  })
-  WASD.E.on('down', () => {
-    player.setAngularVelocity(0.03)
-  })
-
-  input.on('wheel', (event: { deltaY: number }) => {
-    if (event.deltaY > 0) {
-      wristOffset = Math.min(wristOffset + 0.1, 1.5)
-    } else {
-      wristOffset = Math.max(wristOffset - 0.1, -1.5)
-    }
-  })
 }
 
 const armPositions = (pointer: Phaser.Input.Pointer) => {
@@ -164,19 +192,19 @@ const armPositions = (pointer: Phaser.Input.Pointer) => {
     ((CAMERA_HEIGHT - 2 * pointer.y) / CAMERA_HEIGHT + 1) * 30
 
   // 1 for max right
-  const horizontalOffset = ((2 * pointer.x - CAMERA_WIDTH) / CAMERA_WIDTH)
+  const horizontalOffset = (2 * pointer.x - CAMERA_WIDTH) / CAMERA_WIDTH
   const shoulderAngle = ((horizontalOffset - 1) * Math.PI) / 2
 
   const shoulderToHand = new Phaser.Math.Vector2().setToPolar(
-    player.rotation + shoulderAngle,
+    player.head.rotation + shoulderAngle,
     verticalOffset
   )
 
-  const playerPosition = new Phaser.Math.Vector2(player.x, player.y)
+  const playerPosition = new Phaser.Math.Vector2(player.head.x, player.head.y)
   const hand = playerPosition.add(shoulderToHand)
-  const wristAngle = wristOffset * Math.PI / 2
+  const wristAngle = (player.wristOffset * Math.PI) / 2
   const handToTip = new Phaser.Math.Vector2().setToPolar(
-    player.rotation + shoulderAngle + wristAngle,
+    player.head.rotation + shoulderAngle + wristAngle,
     15 // weapon length
   )
 
@@ -194,12 +222,12 @@ function update(this: {
   const { cameras, input } = this
 
   const positions = armPositions(input.activePointer)
-  weaponBaseMagnet.setPosition(positions.hand.x, positions.hand.y)
-  weaponBaseMagnet.setRotation(positions.shoulderAngle)
+  player.weaponBaseMagnet.setPosition(positions.hand.x, positions.hand.y)
+  player.weaponBaseMagnet.setRotation(positions.shoulderAngle)
 
-  weaponHiltMagnet.setPosition(positions.tip.x, positions.tip.y)
+  player.weaponHiltMagnet.setPosition(positions.tip.x, positions.tip.y)
 
-  cameras.main.setRotation(-player.rotation)
+  cameras.main.setRotation(-player.head.rotation)
 }
 
 export const startGame = (type /* istanbul ignore next */ = Phaser.AUTO) => {
