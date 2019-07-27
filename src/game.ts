@@ -18,8 +18,8 @@ const DASH_SPEED = 4
 
 type Player = {
   wristOffset: number // 1 means 90 degrees
-  weaponHiltMagnet: Phaser.Physics.Matter.Image
-  weaponBaseMagnet: Phaser.Physics.Matter.Image
+  fingers: Phaser.Physics.Matter.Image
+  wrist: Phaser.Physics.Matter.Image
   head: Phaser.Physics.Matter.Image
   weapon: Phaser.Physics.Matter.Image
 }
@@ -45,35 +45,31 @@ const createPlayer = (matter: Phaser.Physics.Matter.MatterPhysics): Player => {
   weapon.setFriction(0, 0.01)
   weapon.setBounce(0.7)
 
-  const weaponHiltMagnet = matter.add
-    .image(80, 80, 'player')
-    .setScale(0.08, 0.08)
-  weaponHiltMagnet.setDensity(0.01)
+  const fingers = matter.add.image(80, 80, 'player').setScale(0.08, 0.08)
+  fingers.setDensity(0.01)
 
-  const weaponBaseMagnet = matter.add
-    .image(80, 80, 'player')
-    .setScale(0.08, 0.08)
-  weaponBaseMagnet.setDensity(0.01)
+  const wrist = matter.add.image(80, 80, 'player').setScale(0.08, 0.08)
+  wrist.setDensity(0.01)
 
   head.setCollisionCategory(COLLISION_GROUPS.players)
 
   weapon.setCollisionCategory(COLLISION_GROUPS.weapons)
 
-  weaponHiltMagnet.setCollisionCategory(COLLISION_GROUPS.controls)
-  weaponBaseMagnet.setCollisionCategory(COLLISION_GROUPS.controls)
+  fingers.setCollisionCategory(COLLISION_GROUPS.controls)
+  wrist.setCollisionCategory(COLLISION_GROUPS.controls)
 
   head.setCollidesWith([COLLISION_GROUPS.terrain, COLLISION_GROUPS.players])
-  weaponHiltMagnet.setCollidesWith([])
-  weaponBaseMagnet.setCollidesWith([])
+  fingers.setCollidesWith([])
+  wrist.setCollidesWith([])
 
   // @ts-ignore
-  matter.add.constraint(weaponBaseMagnet, weapon, 1, 0.99, {
+  matter.add.constraint(wrist, weapon, 1, 0.99, {
     pointA: { x: 0, y: 0 },
     pointB: { x: 0, y: 35 },
     damping: 1,
   })
   // @ts-ignore
-  matter.add.constraint(weaponHiltMagnet, weapon, 1, 0.99, {
+  matter.add.constraint(fingers, weapon, 1, 0.99, {
     pointA: { x: 0, y: 0 },
     pointB: { x: 0, y: 20 },
     damping: 1,
@@ -81,8 +77,8 @@ const createPlayer = (matter: Phaser.Physics.Matter.MatterPhysics): Player => {
 
   return {
     wristOffset: 0,
-    weaponHiltMagnet,
-    weaponBaseMagnet,
+    fingers,
+    wrist,
     head,
     weapon,
   }
@@ -170,32 +166,31 @@ function create(this: {
   cameras.main.setSize(CAMERA_WIDTH, CAMERA_HEIGHT)
 }
 
-const armPositions = (pointer: Phaser.Input.Pointer) => {
-  // 40 for max up
-  const verticalOffset =
-    ((CAMERA_HEIGHT - 2 * pointer.y) / CAMERA_HEIGHT + 1) * 30
+const handPositions = (
+  headPosition: Phaser.Physics.Matter.Image,
+  wristAngle: number,
+  armLength: number,
+  shoulderAngle: number
+) => {
+  const head = new Phaser.Math.Vector2(headPosition.x, headPosition.y)
 
-  // 1 for max right
-  const horizontalOffset = (2 * pointer.x - CAMERA_WIDTH) / CAMERA_WIDTH
-  const shoulderAngle = ((horizontalOffset - 1) * Math.PI) / 2
-
+  const shoulderAngle_ = ((shoulderAngle - 1) * Math.PI) / 2
   const shoulderToHand = new Phaser.Math.Vector2().setToPolar(
-    player.head.rotation + shoulderAngle,
-    verticalOffset
+    player.head.rotation + shoulderAngle_,
+    armLength * 30
   )
+  const wrist = head.add(shoulderToHand)
 
-  const playerPosition = new Phaser.Math.Vector2(player.head.x, player.head.y)
-  const hand = playerPosition.add(shoulderToHand)
-  const wristAngle = (player.wristOffset * Math.PI) / 2
-  const handToTip = new Phaser.Math.Vector2().setToPolar(
-    player.head.rotation + shoulderAngle + wristAngle,
-    15 // weapon length
+  const wristAngle_ = (wristAngle * Math.PI) / 2
+  const wristToFingers = new Phaser.Math.Vector2().setToPolar(
+    player.head.rotation + shoulderAngle_ + wristAngle_,
+    15
   )
+  const fingers = new Phaser.Math.Vector2().add(head).add(wristToFingers)
 
   return {
-    hand,
-    shoulderAngle,
-    tip: new Phaser.Math.Vector2().add(playerPosition).add(handToTip),
+    wrist,
+    fingers,
   }
 }
 
@@ -205,11 +200,14 @@ function update(this: {
 }) {
   const { cameras, input } = this
 
-  const positions = armPositions(input.activePointer)
-  player.weaponBaseMagnet.setPosition(positions.hand.x, positions.hand.y)
-  player.weaponBaseMagnet.setRotation(positions.shoulderAngle)
-
-  player.weaponHiltMagnet.setPosition(positions.tip.x, positions.tip.y)
+  const positions = handPositions(
+    player.head,
+    player.wristOffset,
+    (CAMERA_HEIGHT - 2 * input.activePointer.y) / CAMERA_HEIGHT + 1,
+    (2 * input.activePointer.x - CAMERA_WIDTH) / CAMERA_WIDTH
+  )
+  player.wrist.setPosition(positions.wrist.x, positions.wrist.y)
+  player.fingers.setPosition(positions.fingers.x, positions.fingers.y)
 
   cameras.main.setRotation(-player.head.rotation)
 }
